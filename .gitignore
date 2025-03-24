@@ -1,0 +1,52 @@
+# Python 相關
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+*.log
+
+# Node.js 相關
+node_modules/
+npm-debug.log
+yarn-error.log
+*.log
+dist/
+build/
+
+# Docker 相關
+*.dockerignore
+docker-compose.override.yml
+
+# AWS 相關
+*.pem  # SSH 密鑰文件
+awscliv2.zip
+aws/
+*.json  # 避免提交臨時 AWS 輸出文件（如 vpc.json、ec2.json）
+
+# 日誌與臨時檔案
+logs/
+*.log
+*.tmp
+*.bak
+*.swp
+
+# 編輯器與 IDE
+.vscode/
+.idea/
+*.sublime-workspace
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# 其他
+*.md.bak
+*.csv  # 如果有臨時數據文件
+*.txt  # 如果有臨時文本文件
