@@ -1,0 +1,10 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y procps
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install dagster dagster-webserver
+COPY . .
+
+CMD ["dagster-webserver", "-h", "0.0.0.0", "-p", "4000", "-w", "/app/workspace.yaml"]

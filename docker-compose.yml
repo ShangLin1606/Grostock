@@ -25,21 +25,78 @@ services:
     networks:
       - grostock_network
 
+  etcd:
+    image: bitnami/etcd:latest
+    container_name: grostock_etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_DATA_DIR=/bitnami/etcd/data
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd_data:/bitnami/etcd
+    networks:
+      - grostock_network
+    healthcheck:
+      test: ["CMD", "etcdctl", "--endpoints=localhost:2379", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  minio:
+    image: bitnami/minio:latest
+    container_name: grostock_minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_DEFAULT_BUCKETS=grostock-bucket
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    networks:
+      - grostock_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   milvus:
     image: milvusdb/milvus:latest
     container_name: grostock_milvus
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_USE_SSL=false
     ports:
       - "19530:19530"
     volumes:
       - milvus_data:/var/lib/milvus
+    command: ["milvus", "run", "standalone"]
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - grostock_network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
 
   neo4j:
     image: neo4j:latest
     container_name: grostock_neo4j
     environment:
-      - NEO4J_AUTH=neo4j/neo4j
+      - NEO4J_AUTH=neo4j/grostock123
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -48,141 +105,92 @@ services:
     networks:
       - grostock_network
 
-  minio:
-    image: minio/minio:latest
-    container_name: grostock_minio
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"
-      - "9001:9001"  
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    networks:
-      - grostock_network
-
-  etcd:
-    image: quay.io/coreos/etcd:v3.5.0
-    container_name: grostock_etcd
-    environment:
-      - ETCD_AUTO_COMPACTION_MODE=revision
-      - ETCD_AUTO_COMPACTION_RETENTION=1000
-      - ETCD_QUOTA_BACKEND_BYTES=4294967296
-    ports:
-      - "2379:2379"
-    volumes:
-      - etcd_data:/etcd
-    command: etcd --name grostock-etcd --data-dir /etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://localhost:2379
-    networks:
-      - grostock_network
-
   dagster:
-    build: ./dagster
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dagster
     container_name: grostock_dagster
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - PHIDATA_API_KEY=${PHIDATA_API_KEY}
+      - HF_API_KEY=${HF_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL}
     ports:
       - "4000:4000"
     volumes:
-      - ./dagster:/app
-    depends_on:
-      - postgres
-      - mongodb
-      - milvus
-      - minio
-      - etcd
-    networks:
-      - grostock_network
-
-  backend:
-    build: ./backend
-    container_name: grostock_backend
-    ports:
-      - "8000:8000"
-    volumes:
       - ./backend:/app
-      - ./backend/logs:/app/logs
     depends_on:
       - postgres
       - mongodb
       - milvus
       - neo4j
-      - minio
       - etcd
+      - minio
     networks:
       - grostock_network
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: grostock_backend
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - PHIDATA_API_KEY=${PHIDATA_API_KEY}
+      - HF_API_KEY=${HF_API_KEY}
+      - LOG_LEVEL=DEBUG
+      - DAGSTER_HOME=/dagster_home
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/logs:/app/logs
+      - ./dagster_home:/app/dagster_home
+    depends_on:
+      - postgres
+      - mongodb
+      - milvus
+      - neo4j
+      - etcd
+      - minio
+    networks:
+      - grostock_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/stocks"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: grostock_frontend
     ports:
-      - "3000:3000"
+      - "5000:5000"
     depends_on:
       - backend
     networks:
       - grostock_network
-
-  elasticsearch:
-    image: elasticsearch:8.7.1
-    container_name: grostock_elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=true
-      - ELASTIC_USERNAME=elastic
-      - ELASTIC_PASSWORD=elastic
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    networks:
-      - grostock_network
-
-  logstash:
-    image: logstash:8.7.1
-    container_name: grostock_logstash
-    volumes:
-      - ./config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      - ./backend/logs:/logs
-    depends_on:
-      - elasticsearch
-    networks:
-      - grostock_network
-
-  kibana:
-    image: kibana:8.7.1
-    container_name: grostock_kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=elastic
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
-    networks:
-      - grostock_network
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: grostock_prometheus
-    volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    networks:
-      - grostock_network
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grostock_grafana
-    ports:
-      - "3001:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    networks:
-      - grostock_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 networks:
   grostock_network:
@@ -193,7 +201,6 @@ volumes:
   mongodb_data:
   milvus_data:
   neo4j_data:
-  minio_data:
   etcd_data:
-  elasticsearch_data:
-  grafana_data:
+  minio_data:
+  dagster_home:

@@ -29,6 +29,11 @@ docker-compose.override.yml
 awscliv2.zip
 aws/
 *.json  # 避免提交臨時 AWS 輸出文件（如 vpc.json、ec2.json）
+vpc.json
+sg.json
+subnet.json
+ec2.json
+Grostock.pem
 
 # 日誌與臨時檔案
 logs/
@@ -50,3 +55,5 @@ Thumbs.db
 *.md.bak
 *.csv  # 如果有臨時數據文件
 *.txt  # 如果有臨時文本文件
+*.log
+.tmp*

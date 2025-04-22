@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, List, Optional
 
 class Prediction(BaseModel):
     stock_id: str
@@ -41,7 +41,22 @@ class Risk(BaseModel):
     pain_index: float
     recovery_time: int
 
+class PortfolioStock(BaseModel):
+    stock_id: str
+    weight: float
+    predicted_return: float
+
+class PortfolioResponse(BaseModel):
+    stocks: List[PortfolioStock]  # 修正字段名稱
+    risk_level: str  # 修正字段名稱
+
 class AgentResponse(BaseModel):
     predictions: Dict[str, float]
     strategies: Dict[str, int]
     risks: Dict[str, float]
+    portfolio: Optional[PortfolioResponse] = None
+    market_analysis: Optional[Dict] = None
+    news_analysis: Optional[str] = None
+
+class ChatRequest(BaseModel):
+    query: str
