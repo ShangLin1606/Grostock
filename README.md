@@ -116,7 +116,7 @@ LLM Summarizer → Final Output
 ---
 
 ## Author
- **ShangLin Xie (謝尚霖)**  
+ **ShangLin Hsieh (謝尚霖)**  
 Data & AI Scientist / AI Engineer  
 Project: **Grostock AI 投顧平台**  
 GitHub: [ShangLin1606](https://github.com/ShangLin1606/Grostock)
