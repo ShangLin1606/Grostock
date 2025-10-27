@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.log
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.env.*
+
+# Models and data
+/data/
+logs/
+models/
+checkpoints/
+cache/
+tmp/
+output/
+
+# Node / React
+node_modules/
+dist/
+.vite/
+*.log
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Docker / Compose
+*.pid
+docker-compose.override.yml

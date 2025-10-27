@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-background text-text font-sans;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-md font-medium text-white bg-primary hover:bg-blue-700 transition shadow-md;
+}
+
+.card {
+  @apply bg-card p-6 rounded-lg shadow-lg;
+}
+
+.chat-bubble-user {
+  @apply bg-primary text-white p-3 rounded-lg max-w-xs ml-auto;
+}
+
+.chat-bubble-bot {
+  @apply bg-gray-600 text-text p-3 rounded-lg max-w-xs mr-auto;
+}
