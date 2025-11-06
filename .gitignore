@@ -53,7 +53,9 @@ Thumbs.db
 
 # 其他
 *.md.bak
-*.csv  # 如果有臨時數據文件
-*.txt  # 如果有臨時文本文件
+*.csv
+*.txt 
 *.log
 .tmp*
+backend/app/dagster_pipeline/utils/models/
+backend/app/dagster_pipeline/utils/models/
