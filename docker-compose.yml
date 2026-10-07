@@ -46,7 +46,7 @@ services:
       retries: 3
 
   minio:
-    image: bitnami/minio:latest
+    image: soldevelo/minio:latest
     container_name: grostock_minio
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
